@@ -1,0 +1,39 @@
+---
+- hosts: localhost
+  become: true
+  connection: local
+  vars:
+  roles:
+  tasks:
+    - name: Updating APK Cache
+      apk:
+        update_cache: yes
+
+    - name: setting Alpine facts
+      set_fact:
+        apache2_log_dir: "/var/log/apache2"
+        apache2_web_group: "apache"
+        apache2_web_owner: "apache"
+        apache2_web_root: "/var/www/html/Test"
+      when: ansible_os_family == "Alpine"
+
+    - name: setting PHP version
+      set_fact:
+        php_path: 'etc/php5'  #no leading / for template path
+        php_ver: 5
+      when: ansible_os_family == 'Alpine'
+
+    - name: Installing PHP
+      apk:
+        name: "php{{ php_ver }}-apache2"
+        state: "present"
+      when: >
+            apache2_enable_php == "true"
+     - name: Clone a private repository into /opt.
+       git:
+        repo: https://github.com/rameshkalluri/Test.git
+        version: master
+        dest: /var/www/html/
+        accept_hostkey: yes
+        become: no
+

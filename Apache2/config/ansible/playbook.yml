@@ -1,0 +1,52 @@
+---
+- hosts: localhost
+  become: true
+  connection: local
+  vars:
+  roles:
+  tasks:
+    - name: Updating APK Cache
+      apk:
+        update_cache: yes
+
+    - name: Installing Pre-Reqs
+      apk:
+        name: "{{ item }}"
+        state: "present"
+      with_items:
+        - 'rsyslog'
+        - 'supervisor'
+
+    - name: setting Alpine facts
+      set_fact:
+        apache2_log_dir: "/var/log/apache2"
+        apache2_web_group: "apache"
+        apache2_web_owner: "apache"
+        apache2_web_root: "/var/www"
+      when: ansible_os_family == "Alpine"
+
+    - name: setting PHP version
+      set_fact:
+        php_path: 'etc/php5'  #no leading / for template path
+        php_ver: 5
+      when: ansible_os_family == 'Alpine'
+
+    - name: Installing Apache2
+      apk:
+        name: "apache2"
+        state: "present"
+
+    - name: Installing PHP
+      apk:
+        name: "php{{ php_ver }}-apache2"
+        state: "present"
+      when: >
+            apache2_enable_php == "true"
+
+    - name: Creating Folders
+      file:
+        path: "{{ item }}"
+        state: "directory"
+      with_items:
+        - '/etc/supervisor.d'
+        - '/run/apache2'
